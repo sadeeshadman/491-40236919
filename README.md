@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+Mockup of the application: https://scene-vital-65436099.figma.site
+
 ## Getting Started
 
 First, run the development server:
