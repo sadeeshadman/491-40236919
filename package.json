@@ -15,9 +15,11 @@
     "test:ci": "jest --ci"
   },
   "dependencies": {
+    "mongoose": "^9.2.4",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
