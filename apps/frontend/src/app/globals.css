@@ -19,8 +19,49 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes softFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 650ms ease-out both;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fadeUp 650ms ease-out 120ms both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fadeUp 650ms ease-out 220ms both;
+}
+
+.animate-soft-float {
+  animation: softFloat 4.5s ease-in-out infinite;
 }
