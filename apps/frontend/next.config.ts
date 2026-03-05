@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const backendOrigin = (
   process.env.BACKEND_URL ??
@@ -8,7 +9,7 @@ const backendOrigin = (
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: __dirname,
+    root: path.join(__dirname, '..', '..'),
   },
   async rewrites() {
     return [

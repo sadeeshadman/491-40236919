@@ -17,7 +17,31 @@ Install dependencies from the repo root:
 npm ci
 ```
 
-Run apps independently:
+Start MongoDB:
+
+```bash
+docker compose up -d mongodb
+```
+
+Run the full app in one terminal:
+
+```bash
+npm run dev
+```
+
+By default, backend dev uses:
+
+```bash
+mongodb://admin:admin123@localhost:27018/constein?authSource=admin
+```
+
+Override it when needed:
+
+```bash
+MONGODB_URI="your-connection-string" npm run dev
+```
+
+Run apps independently (optional):
 
 ```bash
 npm run dev:frontend
