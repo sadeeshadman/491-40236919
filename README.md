@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Constein Monorepo
 
-## Getting Started
+This repository is split into separate frontend and backend apps:
 
-First, run the development server:
+- `apps/frontend`: Next.js UI app.
+- `apps/backend`: Express + Mongoose API service.
+
+## Local setup
+
+Install dependencies from the repo root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run apps independently:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev:frontend
+npm run dev:backend
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Checks
 
-## Learn More
+Run checks independently:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run check:frontend
+npm run check:backend
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run both:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run check
+```
 
-## Deploy on Vercel
+## API base URL
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Backend default port: `4000`
+- Frontend default port: `3000`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set these in `apps/frontend/.env.local` when the frontend consumes backend APIs:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:4000
+BACKEND_URL=http://localhost:4000
+```
+
+Frontend requests to `/api/*` are proxied to the backend via `apps/frontend/next.config.ts`.
+Use the shared helper in `apps/frontend/src/lib/api.ts` for API calls.

@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  build-test:
+  frontend-checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,10 +18,21 @@ jobs:
 
       - run: npm ci
       - run: npm run format:check
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:ci
+      - run: npm run check:frontend
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  backend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check:backend

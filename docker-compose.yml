@@ -4,7 +4,7 @@ services:
     container_name: myapp-mongodb
     restart: unless-stopped
     ports:
-      - "27018:27017"   # host:container (avoids conflict with your other project)
+      - '27018:27017' # host:container (avoids conflict with your other project)
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
