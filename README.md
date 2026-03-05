@@ -1,6 +1,10 @@
 # Constein Monorepo
 
+Mockup of the application: https://scene-vital-65436099.figma.site
+
 This repository is split into separate frontend and backend apps:
+
+## Getting Started
 
 - `apps/frontend`: Next.js UI app.
 - `apps/backend`: Express + Mongoose API service.
