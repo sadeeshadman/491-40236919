@@ -6,7 +6,7 @@ describe('Home page', () => {
     render(<Home />);
 
     expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Services' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Services' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'About Us' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Contact Us' })).toBeInTheDocument();
 

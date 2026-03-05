@@ -66,10 +66,10 @@ export function GallerySection() {
         ))}
 
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-indigo-950/70 to-slate-900/30" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_26%,rgba(34,211,238,0.22),transparent_42%),radial-gradient(circle_at_82%_75%,rgba(251,191,36,0.2),transparent_36%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_26%,rgba(99,102,241,0.24),transparent_42%),radial-gradient(circle_at_82%_75%,rgba(20,184,166,0.16),transparent_36%)]" />
 
         <div className="relative z-10 mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-6xl flex-col justify-center px-6 py-12 md:px-10">
-          <p className="animate-fade-up text-sm font-semibold tracking-[0.28em] text-cyan-200 uppercase">
+          <p className="animate-fade-up text-sm font-semibold tracking-[0.28em] text-slate-300 uppercase">
             Constein Group
           </p>
           <h1 className="animate-fade-up-delay-1 mt-4 max-w-3xl font-serif text-4xl leading-tight text-white md:text-6xl">
@@ -83,14 +83,14 @@ export function GallerySection() {
             <button
               type="button"
               onClick={goToPrevious}
-              className="rounded-full border border-cyan-300/70 bg-slate-900/40 px-4 py-2 text-sm font-medium text-cyan-100 backdrop-blur transition hover:bg-cyan-900/40"
+              className="rounded-full border border-slate-500 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-100 backdrop-blur transition hover:bg-slate-800"
             >
               Previous
             </button>
             <button
               type="button"
               onClick={goToNext}
-              className="rounded-full border border-amber-300/70 bg-slate-900/40 px-4 py-2 text-sm font-medium text-amber-100 backdrop-blur transition hover:bg-amber-900/40"
+              className="rounded-full border border-slate-500 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-100 backdrop-blur transition hover:bg-slate-800"
             >
               Next
             </button>
@@ -106,8 +106,8 @@ export function GallerySection() {
               aria-label={`Go to ${slide.title}`}
               className={`h-2.5 rounded-full transition-all ${
                 index === activeIndex
-                  ? 'w-8 bg-cyan-200'
-                  : 'w-2.5 bg-slate-300/70 hover:bg-cyan-100'
+                  ? 'w-8 bg-slate-100'
+                  : 'w-2.5 bg-slate-400/70 hover:bg-slate-200'
               }`}
             />
           ))}

@@ -55,32 +55,32 @@ export function ContactSection() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="animate-fade-up-delay-1 relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br from-teal-400/20 via-slate-900 to-slate-900 p-6">
-          <div className="pointer-events-none absolute -top-10 -right-12 h-28 w-28 rounded-full bg-teal-300/20 blur-2xl" />
+        <div className="animate-fade-up-delay-1 relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br from-teal-900/35 via-slate-900 to-slate-900 p-6">
+          <div className="pointer-events-none absolute -top-10 -right-12 h-28 w-28 rounded-full bg-teal-300/12 blur-2xl" />
           <h3 className="font-serif text-2xl text-white">Contact Details</h3>
           <div className="mt-5 space-y-4 text-sm text-slate-200 md:text-base">
             <p>
-              <span className="font-semibold text-cyan-200">Phone:</span> +1 (555) 321-0044
+              <span className="font-semibold text-slate-300">Phone:</span> +1 (555) 321-0044
             </p>
             <p>
-              <span className="font-semibold text-cyan-200">Email:</span> info@consteingroup.com
+              <span className="font-semibold text-slate-300">Email:</span> info@consteingroup.com
             </p>
             <p>
-              <span className="font-semibold text-cyan-200">Location:</span> 245 Harbor Avenue,
+              <span className="font-semibold text-slate-300">Location:</span> 245 Harbor Avenue,
               Suite 18, Wilmington, NC
             </p>
             <p>
-              <span className="font-semibold text-cyan-200">Hours:</span> Monday - Friday, 9:00 AM -
-              6:00 PM
+              <span className="font-semibold text-slate-300">Hours:</span> Monday - Friday, 9:00 AM
+              - 6:00 PM
             </p>
           </div>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="animate-fade-up-delay-2 relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br from-violet-400/20 via-slate-900 to-slate-900 p-6"
+          className="animate-fade-up-delay-2 relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br from-indigo-900/35 via-slate-900 to-slate-900 p-6"
         >
-          <div className="pointer-events-none absolute -bottom-12 -left-12 h-28 w-28 rounded-full bg-violet-300/20 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-12 -left-12 h-28 w-28 rounded-full bg-indigo-300/12 blur-2xl" />
           <h3 className="font-serif text-2xl text-white">Send Us a Message</h3>
 
           <div className="mt-5 space-y-4">
@@ -93,7 +93,7 @@ export function ContactSection() {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, name: event.target.value }))
                 }
-                className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 ring-0 outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 ring-0 outline-none placeholder:text-slate-400 focus:border-slate-300"
                 placeholder="Your name"
               />
             </label>
@@ -107,7 +107,7 @@ export function ContactSection() {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, email: event.target.value }))
                 }
-                className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 ring-0 outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 ring-0 outline-none placeholder:text-slate-400 focus:border-slate-300"
                 placeholder="you@example.com"
               />
             </label>
@@ -121,7 +121,7 @@ export function ContactSection() {
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, message: event.target.value }))
                 }
-                className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 ring-0 outline-none placeholder:text-slate-400 focus:border-cyan-300"
+                className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 ring-0 outline-none placeholder:text-slate-400 focus:border-slate-300"
                 placeholder="Tell us how we can help"
               />
             </label>
@@ -130,7 +130,7 @@ export function ContactSection() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-gradient-to-r from-cyan-300 via-emerald-200 to-amber-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Request'}
           </button>
