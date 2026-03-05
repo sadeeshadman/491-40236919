@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { services } from '@/lib/services';
+import { getServicePath, getSubservicePath } from '@/lib/servicePaths';
 
 const navItemsBeforeServices = [{ label: 'Home', href: '/#home' }];
 const navItemsAfterServices = [
@@ -68,7 +69,7 @@ export function SiteHeader() {
             {services.map((service) => (
               <div key={service.slug} className="min-w-0 space-y-3 xl:px-3">
                 <Link
-                  href={`/services/${service.slug}`}
+                  href={getServicePath(service.slug)}
                   onClick={() => setServicesOpen(false)}
                   className="inline-flex border-b border-slate-700 pb-1 font-semibold text-slate-100 hover:text-white"
                 >
@@ -80,7 +81,7 @@ export function SiteHeader() {
                     {service.subservices.map((subservice) => (
                       <li key={subservice.id}>
                         <Link
-                          href={`/services/${service.slug}?subservice=${subservice.id}`}
+                          href={getSubservicePath(service.slug, subservice.id)}
                           onClick={() => setServicesOpen(false)}
                           className="transition-colors hover:text-slate-100"
                         >

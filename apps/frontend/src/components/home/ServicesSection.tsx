@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { services } from '@/lib/services';
+import { getServicePath } from '@/lib/servicePaths';
 import { SectionHeading } from './SectionHeading';
 
 const serviceStyles: Record<string, { tone: string; glow: string }> = {
@@ -34,7 +35,7 @@ export function ServicesSection() {
         {services.map((service, index) => (
           <Link
             key={service.slug}
-            href={`/services/${service.slug}`}
+            href={getServicePath(service.slug)}
             className={`animate-fade-up-delay-1 group relative overflow-hidden rounded-xl border border-slate-700 bg-gradient-to-br p-5 transition duration-300 hover:-translate-y-1 hover:border-slate-500 ${serviceStyles[service.slug].tone}`}
             style={{ animationDelay: `${120 + index * 90}ms` }}
           >

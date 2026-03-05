@@ -14,7 +14,7 @@ describe('SiteHeader', () => {
     expect(screen.getByRole('link', { name: 'Engineering Consultants' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Coring' })).toHaveAttribute(
       'href',
-      '/services/construction-services?subservice=coring',
+      '/construction-services?subservice=coring',
     );
     expect(screen.queryByText('No subservices listed.')).not.toBeInTheDocument();
   });

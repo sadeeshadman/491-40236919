@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import ServicePage, { generateStaticParams } from '@/app/services/[slug]/page';
+import ServicePage, { generateStaticParams } from '@/app/[slug]/page';
 
 const notFoundMock = jest.fn(() => {
   throw new Error('NEXT_NOT_FOUND');

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { ServiceDetail } from '@/components/services/ServiceDetail';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import { ServiceDetail } from '@/components/services/ServiceDetail';
 import { getServiceBySlug, services } from '@/lib/services';
 
 type ServicePageProps = {
