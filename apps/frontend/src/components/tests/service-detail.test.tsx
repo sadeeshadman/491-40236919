@@ -46,10 +46,7 @@ describe('ServiceDetail', () => {
 
   test('starts with a matching subservice expanded when provided', () => {
     render(
-      <ServiceDetail
-        service={services[0]}
-        initialExpandedSubserviceId="pre-purchase-inspection"
-      />,
+      <ServiceDetail service={services[0]} initialExpandedSubserviceId="pre-purchase-inspection" />,
     );
 
     expect(
@@ -69,10 +66,7 @@ describe('ServiceDetail', () => {
     });
 
     render(
-      <ServiceDetail
-        service={services[0]}
-        initialExpandedSubserviceId="pre-purchase-inspection"
-      />,
+      <ServiceDetail service={services[0]} initialExpandedSubserviceId="pre-purchase-inspection" />,
     );
 
     expect(scrollIntoViewMock).toHaveBeenCalled();

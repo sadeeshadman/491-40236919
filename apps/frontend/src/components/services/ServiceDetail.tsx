@@ -9,10 +9,7 @@ type ServiceDetailProps = {
   initialExpandedSubserviceId?: string | null;
 };
 
-export function ServiceDetail({
-  service,
-  initialExpandedSubserviceId = null,
-}: ServiceDetailProps) {
+export function ServiceDetail({ service, initialExpandedSubserviceId = null }: ServiceDetailProps) {
   const subserviceRefs = useRef<Record<string, HTMLElement | null>>({});
   const [expandedSubserviceId, setExpandedSubserviceId] = useState<string | null>(
     initialExpandedSubserviceId,
