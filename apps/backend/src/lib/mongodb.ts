@@ -1,7 +1,8 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) throw new Error("Missing MONGODB_URI in .env.local");
+const mongodbUri = process.env.MONGODB_URI;
+if (!mongodbUri) throw new Error('Missing MONGODB_URI environment variable');
+const MONGODB_URI: string = mongodbUri;
 
 type Cache = {
   conn: typeof mongoose | null;
@@ -24,4 +25,3 @@ export async function dbConnect() {
   cached.conn = await cached.promise;
   return cached.conn;
 }
-
