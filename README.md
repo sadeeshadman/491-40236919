@@ -17,6 +17,14 @@ Install dependencies from the repo root:
 npm ci
 ```
 
+Create local env files from templates:
+
+```bash
+npm run setup:env
+```
+
+Optional: edit local values in `apps/backend/.env` and `apps/frontend/.env.local`.
+
 Start MongoDB:
 
 ```bash
@@ -27,18 +35,6 @@ Run the full app in one terminal:
 
 ```bash
 npm run dev
-```
-
-By default, backend dev uses:
-
-```bash
-mongodb://admin:admin123@localhost:27018/constein?authSource=admin
-```
-
-Override it when needed:
-
-```bash
-MONGODB_URI="your-connection-string" npm run dev
 ```
 
 Run apps independently (optional):

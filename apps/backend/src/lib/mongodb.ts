@@ -1,6 +1,10 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
 
-const mongodbUri = process.env.MONGODB_URI;
+const defaultMongoUri = 'mongodb://admin:admin123@localhost:27018/constein?authSource=admin';
+const mongodbUri =
+  process.env.MONGODB_URI ?? (process.env.NODE_ENV === 'production' ? undefined : defaultMongoUri);
+
 if (!mongodbUri) throw new Error('Missing MONGODB_URI environment variable');
 const MONGODB_URI: string = mongodbUri;
 
