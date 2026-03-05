@@ -2,6 +2,7 @@ export type Subservice = {
   id: string;
   name: string;
   description: string;
+  audience?: 'owner' | 'tenant';
 };
 
 export type Service = {
@@ -59,37 +60,70 @@ export const services: Service[] = [
     shortDescription:
       'Reliable management support for maintenance coordination, tenant communication, and long-term asset care.',
     overview:
-      'Our Property Management service helps owners protect property value while reducing day-to-day operational stress. We manage communication, maintenance workflows, and service coordination with a focus on responsiveness and accountability.',
+      'Our Property Management service in Ottawa, Ontario helps property owners protect value, reduce day-to-day workload, and keep operations running smoothly year-round. We coordinate tenant communication, inspections, documentation, and maintenance with responsive support tailored to local rental expectations in Ottawa, Ontario. Whether you are an owner growing your portfolio or a tenant looking for reliable support, our team provides practical guidance and structured processes that make property management clear, consistent, and accountable.',
     subservices: [
+      {
+        id: 'owner-property-management',
+        name: 'Property Management',
+        description:
+          'End-to-end management support for owners, including communication, planning, and ongoing operational oversight.',
+        audience: 'owner',
+      },
       {
         id: 'tenant-placement',
         name: 'Tenant Placement',
         description:
-          'Tenant screening and placement support designed to improve occupancy quality and reduce turnover risk.',
+          'Targeted placement support to help owners find reliable tenants and reduce vacancy time.',
+        audience: 'owner',
       },
       {
-        id: 'rent-collection',
-        name: 'Rent Collection',
+        id: 'tenant-screening',
+        name: 'Tenant Screening',
         description:
-          'Structured collection and reporting processes that keep payments organized and transparent for owners.',
+          'Background, reference, and application review processes designed to improve tenant quality and reduce risk.',
+        audience: 'owner',
       },
       {
-        id: 'preventive-maintenance',
-        name: 'Preventive Maintenance',
+        id: 'move-in-move-out-inspection',
+        name: 'Move In/Move Out Inspection',
         description:
-          'Scheduled maintenance planning to minimize emergency repairs and extend the life of key building systems.',
+          'Documented condition inspections at tenancy transitions to protect owners and create clear records.',
+        audience: 'owner',
       },
       {
-        id: 'move-inspections',
-        name: 'Move-In/Move-Out Inspections',
+        id: 'maintenance',
+        name: 'Maintenance',
         description:
-          'Documented inspections at occupancy transitions to track condition and support clear accountability.',
+          'Coordinated preventive and corrective maintenance to keep properties safe, functional, and tenant-ready.',
+        audience: 'owner',
       },
       {
-        id: 'vendor-coordination',
-        name: 'Vendor Coordination',
+        id: 'owner-forms',
+        name: 'Forms for Owners',
         description:
-          'End-to-end coordination with trusted service vendors to ensure quality work and timely completion.',
+          'Owner-focused forms and documentation support for inspections, onboarding, and routine property workflows.',
+        audience: 'owner',
+      },
+      {
+        id: 'become-a-tenant',
+        name: 'Become a Tenant',
+        description:
+          'Guidance for prospective tenants on rental opportunities, application steps, and move-in readiness.',
+        audience: 'tenant',
+      },
+      {
+        id: 'required-documents',
+        name: 'Required Documents',
+        description:
+          'Clear checklist of required documents to help tenants complete applications quickly and accurately.',
+        audience: 'tenant',
+      },
+      {
+        id: 'tenant-forms',
+        name: 'Forms for Tenants',
+        description:
+          'Tenant-facing forms for applications, requests, and communication throughout the tenancy lifecycle.',
+        audience: 'tenant',
       },
     ],
   },

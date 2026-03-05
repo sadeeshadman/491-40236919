@@ -9,7 +9,10 @@ describe('SiteHeader', () => {
     fireEvent.click(servicesButton);
 
     expect(screen.getByRole('link', { name: 'Home Inspection' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Property Management' })).toBeInTheDocument();
+    const propertyManagementLinks = screen.getAllByRole('link', { name: 'Property Management' });
+    expect(
+      propertyManagementLinks.some((link) => link.getAttribute('href') === '/property-management'),
+    ).toBe(true);
     expect(screen.getByRole('link', { name: 'Construction Services' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Engineering Consultants' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Coring' })).toHaveAttribute(

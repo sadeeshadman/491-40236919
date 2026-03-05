@@ -71,4 +71,47 @@ describe('ServiceDetail', () => {
 
     expect(scrollIntoViewMock).toHaveBeenCalled();
   });
+
+  test('renders owner and tenant service groups for property management', () => {
+    const propertyManagementService = services.find(
+      (service) => service.slug === 'property-management',
+    );
+
+    if (!propertyManagementService) {
+      throw new Error('Expected property-management service to exist');
+    }
+
+    render(<ServiceDetail service={propertyManagementService} />);
+
+    expect(screen.getByRole('heading', { name: 'Services for Owners' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Services for Tenants' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Owner' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tenant' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Property Management/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Become a Tenant/ })).toBeInTheDocument();
+  });
+
+  test('scrolls to tenant section when tenant audience is selected', () => {
+    const propertyManagementService = services.find(
+      (service) => service.slug === 'property-management',
+    );
+
+    if (!propertyManagementService) {
+      throw new Error('Expected property-management service to exist');
+    }
+
+    const scrollIntoViewMock = jest.fn();
+
+    Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      writable: true,
+      value: scrollIntoViewMock,
+    });
+
+    render(<ServiceDetail service={propertyManagementService} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tenant' }));
+
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+  });
 });
