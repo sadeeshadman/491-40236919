@@ -47,10 +47,16 @@ export const services: Service[] = [
           'Routine yearly inspection to catch wear-and-tear early and create a preventive maintenance plan.',
       },
       {
-        id: 'moisture-mold-screening',
-        name: 'Moisture & Mold Screening',
+        id: 'commercial-inspection',
+        name: 'Commercial Property Inspection',
         description:
-          'Targeted review of moisture-prone areas to detect potential mold risks and suggest corrective actions.',
+          'Targeted review of commercial properties to identify potential risks and suggest corrective actions.',
+      },
+      {
+        id: 'report-generator',
+        name: 'Inspection Report Generator',
+        description:
+          'Use your post inspection field data to generate a detailed report for your client. Use our tool to make the process of creating large reports easier free of any cost',
       },
     ],
   },

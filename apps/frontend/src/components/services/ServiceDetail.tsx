@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import type { Service, Subservice } from '@/lib/services';
+import { QuoteRequestModal } from '@/components/modals/QuoteRequestModal';
 
 type ServiceDetailProps = {
   service: Service;
@@ -24,6 +24,8 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
     initialExpandedSubserviceId,
   );
   const [selectedAudience, setSelectedAudience] = useState<ServiceAudience>(initialAudience);
+  const [selectedSpecification, setSelectedSpecification] = useState<string | null>(null);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
   const ownerSubservices = service.subservices.filter(
     (subservice) => subservice.audience === 'owner',
@@ -61,6 +63,11 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
     scrollToAudienceSection(audience);
   }
 
+  function openQuoteModal(specification?: string) {
+    setSelectedSpecification(specification ?? null);
+    setIsQuoteModalOpen(true);
+  }
+
   function renderSubserviceList(subservices: Subservice[]) {
     return (
       <div className="space-y-3">
@@ -89,12 +96,13 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
               {isExpanded && (
                 <div className="border-t border-slate-700 px-5 py-4">
                   <p className="text-sm leading-7 text-slate-200">{subservice.description}</p>
-                  <Link
-                    href="/#contact-us"
+                  <button
+                    type="button"
+                    onClick={() => openQuoteModal(subservice.name)}
                     className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
                   >
                     Request a Quote
-                  </Link>
+                  </button>
                 </div>
               )}
             </article>
@@ -176,13 +184,22 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
       )}
 
       <div className="pt-2">
-        <Link
-          href="/#contact-us"
+        <button
+          type="button"
+          onClick={() => openQuoteModal()}
           className="inline-flex items-center rounded-md bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
         >
           Request a Quote
-        </Link>
+        </button>
       </div>
+
+      <QuoteRequestModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        serviceName={service.name}
+        specification={selectedSpecification}
+        sourcePage={`/${service.slug}`}
+      />
     </section>
   );
 }

@@ -36,3 +36,20 @@ jobs:
 
       - run: npm ci
       - run: npm run check:backend
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: docker compose up -d mongodb
+      - run: npm run build:backend
+      - run: npm run test:integration
+      - if: always()
+        run: docker compose down -v
