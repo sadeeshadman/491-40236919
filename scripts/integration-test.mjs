@@ -120,8 +120,10 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`Integration test failed: ${message}`);
   process.exit(1);
-});
+}

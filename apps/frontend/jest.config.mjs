@@ -9,9 +9,10 @@ const customJestConfig = {
   collectCoverage: true,
   collectCoverageFrom: [
     '<rootDir>/src/app/page.tsx',
-    '<rootDir>/src/app/services/[slug]/page.tsx',
+    '<rootDir>/src/app/[slug]/page.tsx',
     '<rootDir>/src/components/home/**/*.tsx',
     '<rootDir>/src/components/layout/SiteHeader.tsx',
+    '<rootDir>/src/components/modals/**/*.tsx',
     '<rootDir>/src/components/services/**/*.tsx',
     '<rootDir>/src/lib/api.ts',
     '<rootDir>/src/lib/services.ts',

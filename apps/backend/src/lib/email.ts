@@ -57,7 +57,7 @@ function buildCompanyEmailText(payload: QuoteEmailPayload): string {
     payload.requestDetails,
   ]
     .join('\n')
-    .replace(/\n{3,}/g, '\n\n');
+    .replaceAll(/\n{3,}/g, '\n\n');
 }
 
 function buildCompanyEmailHtml(payload: QuoteEmailPayload): string {
@@ -100,7 +100,7 @@ function buildCustomerEmailText(payload: QuoteEmailPayload): string {
     'Constein Group',
   ]
     .join('\n')
-    .replace(/\n{3,}/g, '\n\n');
+    .replaceAll(/\n{3,}/g, '\n\n');
 }
 
 function buildCustomerEmailHtml(payload: QuoteEmailPayload): string {

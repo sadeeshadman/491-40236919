@@ -6,7 +6,7 @@ import { sendQuoteEmails } from '../lib/email';
 
 const createQuoteSchema = z.object({
   name: z.string().trim().min(1),
-  email: z.string().email(),
+  email: z.email(),
   phone: z.string().trim().optional(),
   typeOfService: z.string().trim().optional(),
   specification: z.string().trim().optional(),

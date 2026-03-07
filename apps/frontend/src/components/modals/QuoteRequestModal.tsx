@@ -55,7 +55,7 @@ export function QuoteRequestModal({
   serviceName,
   specification,
   sourcePage,
-}: QuoteRequestModalProps) {
+}: Readonly<QuoteRequestModalProps>) {
   const initialState = useMemo(
     () => buildInitialFormState(serviceName, specification),
     [serviceName, specification],
@@ -87,17 +87,19 @@ export function QuoteRequestModal({
     }
 
     document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleEscape);
+    globalThis.addEventListener('keydown', handleEscape);
 
     return () => {
       document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleEscape);
+      globalThis.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
   }
+
+  const isPhonePreferred = formState.preferredContactMethod === 'phone';
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -141,18 +143,19 @@ export function QuoteRequestModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div className="flex min-h-full items-start justify-center px-4 py-8">
-        <div
-          role="dialog"
-          aria-modal="true"
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur">
+      <button
+        type="button"
+        aria-label="Close quote request modal"
+        className="absolute inset-0 h-full w-full"
+        onClick={onClose}
+      />
+
+      <div className="relative z-10 flex min-h-full items-start justify-center px-4 py-8">
+        <dialog
+          open
           aria-label="Request a Quote"
           className="max-h-[calc(100vh-4rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
-          onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -173,7 +176,7 @@ export function QuoteRequestModal({
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-slate-200">
-                Full Name
+                <span>Full Name</span>
                 <span aria-hidden="true" className="ml-1 text-rose-400">
                   *
                 </span>
@@ -190,7 +193,7 @@ export function QuoteRequestModal({
               </label>
 
               <label className="block text-sm font-medium text-slate-200">
-                Email
+                <span>Email</span>
                 <span aria-hidden="true" className="ml-1 text-rose-400">
                   *
                 </span>
@@ -209,28 +212,28 @@ export function QuoteRequestModal({
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-slate-200">
-                Phone Number
-                {formState.preferredContactMethod === 'phone' ? (
+                <span>Phone Number</span>
+                {isPhonePreferred ? (
                   <span aria-hidden="true" className="ml-1 text-rose-400">
                     *
                   </span>
                 ) : null}
                 <input
                   type="tel"
-                  required={formState.preferredContactMethod === 'phone'}
+                  required={isPhonePreferred}
                   value={formState.phone}
                   onChange={(event) =>
                     setFormState((previous) => ({ ...previous, phone: event.target.value }))
                   }
                   className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 outline-none placeholder:text-slate-400 focus:border-slate-300"
                   placeholder={
-                    formState.preferredContactMethod === 'phone' ? 'Required' : 'Optional'
+                    isPhonePreferred ? 'Required when preferred contact is phone' : 'Optional'
                   }
                 />
               </label>
 
               <label className="block text-sm font-medium text-slate-200">
-                Preferred Contact
+                <span>Preferred Contact</span>
                 <span aria-hidden="true" className="ml-1 text-rose-400">
                   *
                 </span>
@@ -253,7 +256,7 @@ export function QuoteRequestModal({
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-slate-200">
-                Type of Service
+                <span>Type of Service</span>
                 <span aria-hidden="true" className="ml-1 text-rose-400">
                   *
                 </span>
@@ -278,7 +281,7 @@ export function QuoteRequestModal({
               </label>
 
               <label className="block text-sm font-medium text-slate-200">
-                Specification
+                <span>Specification</span>
                 <select
                   value={formState.specification}
                   onChange={(event) =>
@@ -286,7 +289,7 @@ export function QuoteRequestModal({
                   }
                   className="mt-2 w-full rounded-md border border-slate-500/90 bg-slate-950/80 px-3 py-2 text-slate-100 outline-none focus:border-slate-300"
                 >
-                  <option value="">Select specification</option>
+                  <option value="">Select specification (optional)</option>
                   {specificationOptions.map((subservice) => (
                     <option key={subservice.id} value={subservice.name}>
                       {subservice.name}
@@ -313,7 +316,7 @@ export function QuoteRequestModal({
             </label>
 
             <label className="block text-sm font-medium text-slate-200">
-              Details of Your Request
+              <span>Details of Your Request</span>
               <span aria-hidden="true" className="ml-1 text-rose-400">
                 *
               </span>
@@ -339,7 +342,7 @@ export function QuoteRequestModal({
 
             {feedback && <p className="text-sm text-slate-200">{feedback}</p>}
           </form>
-        </div>
+        </dialog>
       </div>
     </div>
   );
