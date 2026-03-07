@@ -41,7 +41,7 @@ describe('ServiceDetail', () => {
         'This service is delivered as a comprehensive consulting offering with tailored scope based on project requirements.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Request a Quote' }).length).toBe(1);
+    expect(screen.getAllByRole('button', { name: 'Request a Quote' }).length).toBe(1);
   });
 
   test('starts with a matching subservice expanded when provided', () => {
@@ -113,5 +113,26 @@ describe('ServiceDetail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tenant' }));
 
     expect(scrollIntoViewMock).toHaveBeenCalled();
+  });
+
+  test('opens quote modal with service prefilled from page-level action', () => {
+    render(<ServiceDetail service={services[0]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request a Quote' }));
+
+    expect(screen.getByRole('dialog', { name: 'Request a Quote' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Type of Service/i)).toHaveValue('Home Inspection');
+    expect(screen.getByLabelText(/Specification/i)).toHaveValue('');
+  });
+
+  test('opens quote modal with subservice prefilled from subservice action', () => {
+    render(<ServiceDetail service={services[0]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Pre-Purchase Inspection/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Request a Quote' })[0]);
+
+    expect(screen.getByRole('dialog', { name: 'Request a Quote' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Type of Service/i)).toHaveValue('Home Inspection');
+    expect(screen.getByLabelText(/Specification/i)).toHaveValue('Pre-Purchase Inspection');
   });
 });
