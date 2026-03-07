@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { canRequestQuoteForSubservice } from '@/lib/services';
 import type { Service, Subservice } from '@/lib/services';
 import { QuoteRequestModal } from '@/components/modals/QuoteRequestModal';
 
@@ -96,13 +97,15 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
               {isExpanded && (
                 <div className="border-t border-slate-700 px-5 py-4">
                   <p className="text-sm leading-7 text-slate-200">{subservice.description}</p>
-                  <button
-                    type="button"
-                    onClick={() => openQuoteModal(subservice.name)}
-                    className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
-                  >
-                    Request a Quote
-                  </button>
+                  {canRequestQuoteForSubservice(subservice) ? (
+                    <button
+                      type="button"
+                      onClick={() => openQuoteModal(subservice.name)}
+                      className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                    >
+                      Request a Quote
+                    </button>
+                  ) : null}
                 </div>
               )}
             </article>

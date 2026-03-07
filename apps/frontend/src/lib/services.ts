@@ -13,6 +13,12 @@ export type Service = {
   subservices: Subservice[];
 };
 
+const quoteDisabledSubserviceIds = new Set(['owner-forms', 'tenant-forms']);
+
+export function canRequestQuoteForSubservice(subservice: Pick<Subservice, 'id'>) {
+  return !quoteDisabledSubserviceIds.has(subservice.id);
+}
+
 export const services: Service[] = [
   {
     slug: 'home-inspection',

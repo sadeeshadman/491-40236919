@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ServiceDetail } from '../services/ServiceDetail';
 import { services } from '../../lib/services';
 
@@ -134,5 +134,37 @@ describe('ServiceDetail', () => {
     expect(screen.getByRole('dialog', { name: 'Request a Quote' })).toBeInTheDocument();
     expect(screen.getByLabelText(/Type of Service/i)).toHaveValue('Home Inspection');
     expect(screen.getByLabelText(/Specification/i)).toHaveValue('Pre-Purchase Inspection');
+  });
+
+  test('does not show subservice quote buttons for forms subservices', () => {
+    const propertyManagementService = services.find(
+      (service) => service.slug === 'property-management',
+    );
+
+    if (!propertyManagementService) {
+      throw new Error('Expected property-management service to exist');
+    }
+
+    render(<ServiceDetail service={propertyManagementService} />);
+
+    const ownerFormsTrigger = screen.getByRole('button', { name: /Forms for Owners/ });
+    const tenantFormsTrigger = screen.getByRole('button', { name: /Forms for Tenants/ });
+
+    fireEvent.click(ownerFormsTrigger);
+    fireEvent.click(tenantFormsTrigger);
+
+    const ownerFormsCard = ownerFormsTrigger.closest('article');
+    const tenantFormsCard = tenantFormsTrigger.closest('article');
+
+    if (!ownerFormsCard || !tenantFormsCard) {
+      throw new Error('Expected forms cards to exist');
+    }
+
+    expect(
+      within(ownerFormsCard).queryByRole('button', { name: 'Request a Quote' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(tenantFormsCard).queryByRole('button', { name: 'Request a Quote' }),
+    ).not.toBeInTheDocument();
   });
 });

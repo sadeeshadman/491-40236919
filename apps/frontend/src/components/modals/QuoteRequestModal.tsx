@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { services } from '@/lib/services';
+import { canRequestQuoteForSubservice, services } from '@/lib/services';
 
 type QuoteRequestModalProps = {
   isOpen: boolean;
@@ -64,7 +64,9 @@ export function QuoteRequestModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState('');
   const selectedService = services.find((service) => service.name === formState.typeOfService);
-  const specificationOptions = selectedService?.subservices ?? [];
+  const specificationOptions =
+    selectedService?.subservices.filter((subservice) => canRequestQuoteForSubservice(subservice)) ??
+    [];
 
   useEffect(() => {
     if (!isOpen) {
