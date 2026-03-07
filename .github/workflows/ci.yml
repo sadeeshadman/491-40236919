@@ -51,5 +51,7 @@ jobs:
       - run: docker compose up -d mongodb
       - run: npm run build:backend
       - run: npm run test:integration
+        env:
+          MONGODB_URI: mongodb://admin:admin123@127.0.0.1:27018/constein?authSource=admin
       - if: always()
         run: docker compose down -v
