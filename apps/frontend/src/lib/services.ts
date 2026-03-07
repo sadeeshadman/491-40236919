@@ -3,6 +3,13 @@ export type Subservice = {
   name: string;
   description: string;
   audience?: 'owner' | 'tenant';
+  forms?: FormResource[];
+};
+
+export type FormResource = {
+  id: string;
+  name: string;
+  href: string;
 };
 
 export type Service = {
@@ -115,6 +122,13 @@ export const services: Service[] = [
         description:
           'Owner-focused forms and documentation support for inspections, onboarding, and routine property workflows.',
         audience: 'owner',
+        forms: [
+          {
+            id: 'owner-eviction-notice-n12',
+            name: 'Eviction Notice',
+            href: '/forms/property-management/owners/N12-Notice%20of%20Eviction.pdf',
+          },
+        ],
       },
       {
         id: 'become-a-tenant',

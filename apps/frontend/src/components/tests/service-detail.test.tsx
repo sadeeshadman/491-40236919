@@ -167,4 +167,26 @@ describe('ServiceDetail', () => {
       within(tenantFormsCard).queryByRole('button', { name: 'Request a Quote' }),
     ).not.toBeInTheDocument();
   });
+
+  test('shows owner forms list with Eviction Notice link', () => {
+    const propertyManagementService = services.find(
+      (service) => service.slug === 'property-management',
+    );
+
+    if (!propertyManagementService) {
+      throw new Error('Expected property-management service to exist');
+    }
+
+    render(<ServiceDetail service={propertyManagementService} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Forms for Owners/ }));
+
+    const formLink = screen.getByRole('link', { name: /Eviction Notice/i });
+
+    expect(formLink).toBeInTheDocument();
+    expect(formLink).toHaveAttribute(
+      'href',
+      '/forms/property-management/owners/N12-Notice%20of%20Eviction.pdf',
+    );
+  });
 });

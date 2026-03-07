@@ -153,9 +153,10 @@ export function QuoteRequestModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 flex min-h-full items-start justify-center px-4 py-8">
-        <dialog
-          open
+      <div className="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
+        <div
+          role="dialog"
+          aria-modal="true"
           aria-label="Request a Quote"
           className="max-h-[calc(100vh-4rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
         >
@@ -344,7 +345,7 @@ export function QuoteRequestModal({
 
             {feedback && <p className="text-sm text-slate-200">{feedback}</p>}
           </form>
-        </dialog>
+        </div>
       </div>
     </div>
   );
