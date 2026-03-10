@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { canRequestQuoteForSubservice } from '@/lib/services';
 import type { Service, Subservice } from '@/lib/services';
 import { QuoteRequestModal } from '@/components/modals/QuoteRequestModal';
 
@@ -96,13 +97,41 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
               {isExpanded && (
                 <div className="border-t border-slate-700 px-5 py-4">
                   <p className="text-sm leading-7 text-slate-200">{subservice.description}</p>
-                  <button
-                    type="button"
-                    onClick={() => openQuoteModal(subservice.name)}
-                    className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
-                  >
-                    Request a Quote
-                  </button>
+
+                  {subservice.forms && subservice.forms.length > 0 ? (
+                    <div className="mt-5 rounded-lg border border-slate-600/80 bg-slate-950/70 p-4">
+                      <p className="text-xs font-semibold tracking-[0.2em] text-slate-300 uppercase">
+                        Available Forms
+                      </p>
+                      <ul className="mt-3 space-y-2">
+                        {subservice.forms.map((form) => (
+                          <li key={form.id}>
+                            <a
+                              href={form.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="group flex items-center justify-between rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-indigo-400 hover:bg-slate-800"
+                            >
+                              <span>{form.name}</span>
+                              <span className="text-xs font-medium text-indigo-300 transition group-hover:text-indigo-200">
+                                Open PDF
+                              </span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {canRequestQuoteForSubservice(subservice) ? (
+                    <button
+                      type="button"
+                      onClick={() => openQuoteModal(subservice.name)}
+                      className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                    >
+                      Request a Quote
+                    </button>
+                  ) : null}
                 </div>
               )}
             </article>

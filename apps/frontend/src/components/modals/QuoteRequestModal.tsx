@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { services } from '@/lib/services';
+import { canRequestQuoteForSubservice, services } from '@/lib/services';
 
 type QuoteRequestModalProps = {
   isOpen: boolean;
@@ -64,7 +64,9 @@ export function QuoteRequestModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState('');
   const selectedService = services.find((service) => service.name === formState.typeOfService);
-  const specificationOptions = selectedService?.subservices ?? [];
+  const specificationOptions =
+    selectedService?.subservices.filter((subservice) => canRequestQuoteForSubservice(subservice)) ??
+    [];
 
   useEffect(() => {
     if (!isOpen) {
@@ -151,9 +153,10 @@ export function QuoteRequestModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 flex min-h-full items-start justify-center px-4 py-8">
-        <dialog
-          open
+      <div className="relative z-10 flex min-h-full items-center justify-center px-4 py-8">
+        <div
+          role="dialog"
+          aria-modal="true"
           aria-label="Request a Quote"
           className="max-h-[calc(100vh-4rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
         >
@@ -342,7 +345,7 @@ export function QuoteRequestModal({
 
             {feedback && <p className="text-sm text-slate-200">{feedback}</p>}
           </form>
-        </dialog>
+        </div>
       </div>
     </div>
   );

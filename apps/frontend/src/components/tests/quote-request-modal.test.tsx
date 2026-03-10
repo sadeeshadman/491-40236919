@@ -91,4 +91,11 @@ describe('QuoteRequestModal', () => {
       });
     });
   });
+
+  test('does not show forms subservices in specification dropdown', () => {
+    renderModal({ serviceName: 'Property Management', specification: null });
+
+    expect(screen.queryByRole('option', { name: 'Forms for Owners' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Forms for Tenants' })).not.toBeInTheDocument();
+  });
 });

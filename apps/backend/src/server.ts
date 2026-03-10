@@ -4,6 +4,8 @@ import { quotesRouter } from './routes/quotes';
 
 const app = express();
 
+app.disable('x-powered-by');
+
 app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/quotes', quotesRouter);
