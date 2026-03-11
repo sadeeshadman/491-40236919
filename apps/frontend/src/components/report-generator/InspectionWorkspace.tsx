@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import type {
+  CannedComment,
   FindingUrgency,
   InspectionDocument,
   InspectionFinding,
@@ -61,6 +62,8 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
   const [isDirty, setIsDirty] = useState(false);
   const [isFindingModalOpen, setIsFindingModalOpen] = useState(false);
   const [findingDraft, setFindingDraft] = useState<FindingDraft>(initialFindingDraft);
+  const [cannedComments, setCannedComments] = useState<CannedComment[]>([]);
+  const [cannedSearch, setCannedSearch] = useState('');
 
   const selectedSection = inspection?.sections[selectedSectionIndex] ?? null;
 
@@ -83,6 +86,19 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
 
     void loadInspection();
   }, [inspectionId]);
+
+  useEffect(() => {
+    async function loadCannedComments() {
+      try {
+        const response = await apiFetch<{ comments: CannedComment[] }>('/comments');
+        setCannedComments(response.comments);
+      } catch {
+        // Non-critical: if canned comments fail to load the inspector can still type manually
+      }
+    }
+
+    void loadCannedComments();
+  }, []);
 
   const saveProgress = useCallback(
     async (mode: SaveMode) => {
@@ -187,8 +203,27 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
     });
 
     setFindingDraft(initialFindingDraft);
+    setCannedSearch('');
     setIsFindingModalOpen(false);
   }
+
+  function applyCannedComment(comment: CannedComment) {
+    setFindingDraft((previous) => ({
+      ...previous,
+      condition: comment.condition,
+      implication: comment.implication,
+      recommendation: comment.recommendation,
+    }));
+    setCannedSearch('');
+  }
+
+  const filteredCannedComments = useMemo(() => {
+    const query = cannedSearch.trim().toLowerCase();
+    if (!query) return [];
+    return cannedComments.filter(
+      (c) => c.title.toLowerCase().includes(query) || c.category.toLowerCase().includes(query),
+    );
+  }, [cannedComments, cannedSearch]);
 
   const summaryCounts = useMemo(() => {
     const totalSections = inspection?.sections.length ?? 0;
@@ -361,7 +396,10 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
             type="button"
             aria-label="Close finding modal"
             className="absolute inset-0 h-full w-full"
-            onClick={() => setIsFindingModalOpen(false)}
+            onClick={() => {
+              setIsFindingModalOpen(false);
+              setCannedSearch('');
+            }}
           />
 
           <div className="relative z-10 w-full max-w-lg rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
@@ -369,12 +407,55 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
               <h3 className="text-lg font-semibold text-white">Add Finding</h3>
               <button
                 type="button"
-                onClick={() => setIsFindingModalOpen(false)}
+                onClick={() => {
+                  setIsFindingModalOpen(false);
+                  setCannedSearch('');
+                }}
                 className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-200 hover:border-slate-400"
               >
                 Close
               </button>
             </div>
+
+            {cannedComments.length > 0 ? (
+              <div className="mt-4">
+                <label className="block text-sm text-slate-200" htmlFor="canned-search">
+                  Quick-fill from canned comments
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    id="canned-search"
+                    type="search"
+                    placeholder="Search by title or category (e.g. Electrical, GFCI…)"
+                    value={cannedSearch}
+                    onChange={(event) => setCannedSearch(event.target.value)}
+                    className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400"
+                    autoComplete="off"
+                  />
+                  {filteredCannedComments.length > 0 ? (
+                    <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-slate-600 bg-slate-900 shadow-lg">
+                      {filteredCannedComments.map((comment) => (
+                        <li key={comment._id}>
+                          <button
+                            type="button"
+                            onClick={() => applyCannedComment(comment)}
+                            className="flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-slate-800"
+                          >
+                            <span className="font-semibold text-white">{comment.title}</span>
+                            <span className="text-xs text-slate-400">{comment.category}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+                {cannedSearch && filteredCannedComments.length === 0 ? (
+                  <p className="mt-1 text-xs text-slate-400">
+                    No matches — fill in the fields manually below.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <form onSubmit={handleFindingSubmit} className="mt-4 space-y-3">
               <label className="block text-sm text-slate-200">
@@ -391,8 +472,9 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
 
               <label className="block text-sm text-slate-200">
                 Condition
-                <input
+                <textarea
                   required
+                  rows={2}
                   value={findingDraft.condition}
                   onChange={(event) =>
                     setFindingDraft((previous) => ({ ...previous, condition: event.target.value }))

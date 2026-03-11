@@ -1,4 +1,5 @@
 import express from 'express';
+import { commentsRouter } from './routes/comments';
 import { healthRouter } from './routes/health';
 import { inspectionsRouter } from './routes/inspections';
 import { quotesRouter } from './routes/quotes';
@@ -9,6 +10,7 @@ app.disable('x-powered-by');
 
 app.use(express.json());
 app.use('/api/health', healthRouter);
+app.use('/api/comments', commentsRouter);
 app.use('/api/inspections', inspectionsRouter);
 app.use('/api/quotes', quotesRouter);
 

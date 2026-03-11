@@ -27,3 +27,12 @@ export type InspectionDocument = {
   expiresAt?: string | null;
   sections: InspectionSection[];
 };
+
+export type CannedComment = {
+  _id: string;
+  category: string;
+  title: string;
+  condition: string;
+  implication: string;
+  recommendation: string;
+};
