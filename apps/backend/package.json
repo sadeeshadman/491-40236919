@@ -12,12 +12,14 @@
     "check": "npm run typecheck && npm run test:ci"
   },
   "dependencies": {
+    "@types/pdfkit": "^0.17.5",
     "cloudinary": "^2.9.0",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "mongoose": "^9.2.4",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.1",
+    "pdfkit": "^0.17.2",
     "puppeteer": "^24.39.0",
     "zod": "^4.3.6"
   },

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import PDFDocument from 'pdfkit';
 import puppeteer, { type Browser } from 'puppeteer';
 import { Readable } from 'stream';
 import { z } from 'zod';
@@ -85,6 +86,13 @@ type PdfInspection = {
   sections: PdfSection[];
 };
 
+type PdfAuthor = {
+  name?: string;
+  email?: string;
+} | null;
+
+type PdfDoc = InstanceType<typeof PDFDocument>;
+
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -109,6 +117,165 @@ function formatDisplayDate(value: Date | string | undefined) {
     month: 'long',
     day: 'numeric',
   });
+}
+
+function ensurePdfSpace(doc: PdfDoc, minimumHeight = 72) {
+  const bottomEdge = doc.page.height - doc.page.margins.bottom - 24;
+
+  if (doc.y + minimumHeight > bottomEdge) {
+    doc.addPage();
+  }
+}
+
+function writePdfLabelValue(doc: PdfDoc, label: string, value: string) {
+  doc.fillColor('#0f172a').font('Helvetica-Bold').text(`${label}: `, { continued: true });
+  doc.font('Helvetica').text(value);
+}
+
+async function buildFallbackPdfBuffer(inspection: PdfInspection, author: PdfAuthor) {
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 48,
+    bufferPages: true,
+    info: {
+      Title: `Inspection Report ${inspection.propertyAddress}`,
+      Author: author?.name ?? 'Constein',
+    },
+  });
+
+  const bufferPromise = new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+  });
+
+  const safetyFindings = inspection.sections.flatMap((section) =>
+    section.findings
+      .filter((finding) => finding.urgency === 'Safety')
+      .map((finding) => ({
+        sectionTitle: section.title,
+        ...finding,
+      })),
+  );
+
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(21).text('Property Inspection Report');
+  doc.moveDown(0.35);
+  doc.fontSize(13).font('Helvetica').fillColor('#334155').text(inspection.propertyAddress);
+  doc.moveDown(0.9);
+
+  doc.fontSize(11);
+  writePdfLabelValue(doc, 'Property Type', inspection.propertyType);
+  writePdfLabelValue(doc, 'Status', inspection.status);
+  writePdfLabelValue(doc, 'Prepared On', formatDisplayDate(new Date()));
+  writePdfLabelValue(doc, 'Created', formatDisplayDate(inspection.createdAt));
+  writePdfLabelValue(doc, 'Inspector', author?.name?.trim() || 'Unassigned');
+  writePdfLabelValue(doc, 'Inspector Email', author?.email?.trim() || 'N/A');
+  doc.moveDown(1.1);
+
+  doc
+    .fillColor('#b91c1c')
+    .font('Helvetica-Bold')
+    .fontSize(16)
+    .text('Executive Summary - Safety Findings');
+  doc.moveDown(0.45);
+  doc.font('Helvetica').fontSize(10.5).fillColor('#334155');
+
+  if (safetyFindings.length === 0) {
+    doc.text('No findings were marked with Safety urgency.');
+  } else {
+    safetyFindings.forEach((finding, index) => {
+      ensurePdfSpace(doc, 90);
+      doc
+        .fillColor('#991b1b')
+        .font('Helvetica-Bold')
+        .text(`Safety ${index + 1} - ${finding.sectionTitle}`);
+      doc.fillColor('#0f172a').font('Helvetica-Bold').text(finding.component);
+      doc.fillColor('#334155').font('Helvetica').text(`Condition: ${finding.condition}`);
+      doc.text(`Implication: ${finding.implication}`);
+      doc.text(`Recommendation: ${finding.recommendation}`);
+      doc.moveDown(0.7);
+    });
+  }
+
+  doc.moveDown(0.8);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(16).text('System-by-System Findings');
+  doc.moveDown(0.5);
+
+  const sectionsWithFindings = inspection.sections.filter((section) => section.findings.length > 0);
+
+  if (sectionsWithFindings.length === 0) {
+    doc
+      .font('Helvetica')
+      .fontSize(11)
+      .fillColor('#334155')
+      .text('No findings have been added to this report yet.');
+  } else {
+    sectionsWithFindings.forEach((section) => {
+      ensurePdfSpace(doc, 64);
+      doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(14).text(section.title);
+      doc.moveDown(0.25);
+
+      section.findings.forEach((finding, index) => {
+        ensurePdfSpace(doc, 132);
+        doc
+          .fillColor('#64748b')
+          .font('Helvetica-Bold')
+          .fontSize(10)
+          .text(`Finding ${index + 1} - ${finding.urgency}`);
+        doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text(finding.component);
+        doc
+          .fillColor('#334155')
+          .font('Helvetica')
+          .fontSize(10.5)
+          .text(`Condition: ${finding.condition}`);
+        doc.text(`Implication: ${finding.implication}`);
+        doc.text(`Recommendation: ${finding.recommendation}`);
+
+        if (finding.imageUrls.length > 0) {
+          doc.moveDown(0.25);
+          doc.fillColor('#0f172a').font('Helvetica-Bold').text('Evidence Images');
+          doc.font('Helvetica').fillColor('#2563eb');
+
+          finding.imageUrls.forEach((url) => {
+            ensurePdfSpace(doc, 24);
+            doc.text(url, {
+              link: url,
+              underline: true,
+            });
+          });
+
+          doc.fillColor('#334155');
+        }
+
+        doc.moveDown(0.8);
+      });
+    });
+  }
+
+  const range = doc.bufferedPageRange();
+  for (let pageIndex = 0; pageIndex < range.count; pageIndex += 1) {
+    doc.switchToPage(pageIndex);
+    doc
+      .font('Helvetica')
+      .fontSize(8.5)
+      .fillColor('#64748b')
+      .text(
+        `This report follows the CAHPI/OAHI Standards of Practice. Page ${pageIndex + 1} of ${range.count}`,
+        doc.page.margins.left,
+        doc.page.height - doc.page.margins.bottom + 8,
+        {
+          width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+          align: 'center',
+        },
+      );
+  }
+
+  doc.end();
+  return bufferPromise;
 }
 
 export const inspectionsRouter = Router();
@@ -226,7 +393,7 @@ inspectionsRouter.get('/:id/pdf', async (req, res) => {
       return res.status(404).json({ error: 'Inspection not found' });
     }
 
-    let author: { name?: string; email?: string } | null = null;
+    let author: PdfAuthor = null;
     if (inspection.authorId) {
       const usersCollection = mongoose.connection.db?.collection('Users');
       if (usersCollection) {
@@ -404,26 +571,40 @@ inspectionsRouter.get('/:id/pdf', async (req, res) => {
       </html>
     `;
 
-    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    let pdfBuffer: Buffer;
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-      ...(executablePath ? { executablePath } : {}),
-    });
+    try {
+      const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
 
-    const page = await browser.newPage();
-    await page.setContent(reportHtml, { waitUntil: 'networkidle0' });
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        ...(executablePath ? { executablePath } : {}),
+      });
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '20px', bottom: '40px' },
-      displayHeaderFooter: true,
-      headerTemplate: '<div></div>',
-      footerTemplate:
-        "<div style='font-size:10px; width:100%; text-align:center; color:#64748b;'>This report follows the CAHPI/OAHI Standards of Practice.</div>",
-    });
+      const page = await browser.newPage();
+      await page.setContent(reportHtml, { waitUntil: 'networkidle0' });
+
+      const puppeteerPdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '20px', bottom: '40px' },
+        displayHeaderFooter: true,
+        headerTemplate: '<div></div>',
+        footerTemplate:
+          "<div style='font-size:10px; width:100%; text-align:center; color:#64748b;'>This report follows the CAHPI/OAHI Standards of Practice.</div>",
+      });
+
+      pdfBuffer = Buffer.from(puppeteerPdfBuffer);
+    } catch (pdfError) {
+      if (browser) {
+        await browser.close();
+        browser = null;
+      }
+
+      console.error('Falling back to PDFKit after Puppeteer failure:', pdfError);
+      pdfBuffer = await buildFallbackPdfBuffer(inspection, author);
+    }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=inspection-${id}.pdf`);
