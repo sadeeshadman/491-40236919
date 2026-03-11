@@ -18,6 +18,7 @@ const startInspectionSchema = z
   .object({
     propertyAddress: z.string().trim().min(1),
     propertyType: z.enum(propertyTypeValues),
+    authorId: z.string().trim().optional(),
   })
   .strict();
 
@@ -112,6 +113,44 @@ function formatDisplayDate(value: Date | string | undefined) {
 
 export const inspectionsRouter = Router();
 
+inspectionsRouter.get('/', async (req, res) => {
+  try {
+    const authorIdParam =
+      typeof req.query.authorId === 'string' ? req.query.authorId.trim() : undefined;
+    const statusParam = typeof req.query.status === 'string' ? req.query.status.trim() : undefined;
+
+    if (authorIdParam && !isValidObjectId(authorIdParam)) {
+      return res.status(400).json({ error: 'Invalid authorId' });
+    }
+
+    if (statusParam && !inspectionStatusValues.includes(statusParam as InspectionStatus)) {
+      return res.status(400).json({ error: 'Invalid status filter' });
+    }
+
+    await dbConnect();
+
+    const query: {
+      authorId?: mongoose.Types.ObjectId;
+      status?: InspectionStatus;
+    } = {};
+
+    if (authorIdParam) {
+      query.authorId = new mongoose.Types.ObjectId(authorIdParam);
+    }
+
+    if (statusParam) {
+      query.status = statusParam as InspectionStatus;
+    }
+
+    const inspections = await Inspection.find(query).sort({ updatedAt: -1, createdAt: -1 }).lean();
+
+    return res.json({ inspections });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return res.status(500).json({ error: message });
+  }
+});
+
 inspectionsRouter.post('/start', async (req, res) => {
   try {
     const parseResult = startInspectionSchema.safeParse(req.body);
@@ -126,7 +165,13 @@ inspectionsRouter.post('/start', async (req, res) => {
     const status: InspectionStatus = 'Draft';
     const expiresAt = status === 'Draft' ? getDraftExpiryDate() : undefined;
 
+    const authorId =
+      payload.authorId && isValidObjectId(payload.authorId)
+        ? new mongoose.Types.ObjectId(payload.authorId)
+        : undefined;
+
     const inspection = await Inspection.create({
+      authorId,
       propertyAddress: payload.propertyAddress,
       propertyType: payload.propertyType,
       status,

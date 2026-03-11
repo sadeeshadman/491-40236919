@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { canRequestQuoteForSubservice } from '@/lib/services';
 import type { Service, Subservice } from '@/lib/services';
 import { QuoteRequestModal } from '@/components/modals/QuoteRequestModal';
@@ -36,6 +37,7 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
   const [selectedSpecification, setSelectedSpecification] = useState<string | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isInspectorAuthenticated, setIsInspectorAuthenticated] = useState(false);
+  const [inspectorUserId, setInspectorUserId] = useState<string | null>(null);
   const [reportAddress, setReportAddress] = useState('');
   const [reportPropertyType, setReportPropertyType] = useState<'Detached' | 'Condo' | 'Townhouse'>(
     'Detached',
@@ -54,6 +56,7 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
   useEffect(() => {
     if (service.slug !== 'home-inspection') {
       setIsInspectorAuthenticated(false);
+      setInspectorUserId(null);
       return;
     }
 
@@ -69,12 +72,14 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
         const data = (await response.json()) as {
           user?: {
             role?: string;
+            id?: string;
           };
         };
 
         const role = data.user?.role;
         if (!cancelled && (role === 'employee' || role === 'admin')) {
           setIsInspectorAuthenticated(true);
+          setInspectorUserId(typeof data.user?.id === 'string' ? data.user.id : null);
         }
       } catch {
         // If session lookup fails, keep tools hidden.
@@ -153,6 +158,7 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
         body: JSON.stringify({
           propertyAddress: trimmedAddress,
           propertyType: reportPropertyType,
+          authorId: inspectorUserId ?? undefined,
         }),
       });
 
@@ -259,6 +265,12 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
               Inspector Tools
             </p>
             <p className="mt-1 text-sm text-slate-200">Start a new inspection workspace</p>
+            <Link
+              href="/report-generator"
+              className="mt-2 inline-flex rounded-md border border-indigo-300/40 px-3 py-1.5 text-xs font-semibold text-indigo-100 transition hover:border-indigo-300 hover:text-white"
+            >
+              My Reports
+            </Link>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <label className="block text-sm text-slate-100">
                 Property Address
