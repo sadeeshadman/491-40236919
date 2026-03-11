@@ -121,7 +121,9 @@ describe('InspectionWorkspace', () => {
     fireEvent.click(revertButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Inspection reverted to draft. Editing is enabled again.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Inspection reverted to draft. Editing is enabled again.'),
+      ).toBeInTheDocument();
     });
   });
 

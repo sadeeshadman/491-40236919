@@ -76,6 +76,8 @@ type PdfSection = {
   findings: PdfFinding[];
 };
 
+type FindingNarrative = Pick<PdfFinding, 'condition' | 'implication' | 'recommendation'>;
+
 type PdfInspection = {
   _id: mongoose.Types.ObjectId;
   authorId?: mongoose.Types.ObjectId | null;
@@ -130,6 +132,38 @@ function ensurePdfSpace(doc: PdfDoc, minimumHeight = 72) {
 function writePdfLabelValue(doc: PdfDoc, label: string, value: string) {
   doc.fillColor('#0f172a').font('Helvetica-Bold').text(`${label}: `, { continued: true });
   doc.font('Helvetica').text(value);
+}
+
+function renderFindingNarrativeHtml(
+  finding: FindingNarrative,
+  spacingClass: 'mt-1' | 'mt-2',
+): string {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: 'Condition', value: finding.condition },
+    { label: 'Implication', value: finding.implication },
+    { label: 'Recommendation', value: finding.recommendation },
+  ];
+
+  return rows
+    .map(
+      ({ label, value }) =>
+        `<p class='${spacingClass} text-sm text-slate-700'><span class='font-semibold'>${label}:</span> ${escapeHtml(
+          value,
+        )}</p>`,
+    )
+    .join('');
+}
+
+function writePdfFindingNarrative(doc: PdfDoc, finding: FindingNarrative) {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: 'Condition', value: finding.condition },
+    { label: 'Implication', value: finding.implication },
+    { label: 'Recommendation', value: finding.recommendation },
+  ];
+
+  rows.forEach(({ label, value }) => {
+    doc.text(`${label}: ${value}`);
+  });
 }
 
 async function buildFallbackPdfBuffer(inspection: PdfInspection, author: PdfAuthor) {
@@ -194,9 +228,8 @@ async function buildFallbackPdfBuffer(inspection: PdfInspection, author: PdfAuth
         .font('Helvetica-Bold')
         .text(`Safety ${index + 1} - ${finding.sectionTitle}`);
       doc.fillColor('#0f172a').font('Helvetica-Bold').text(finding.component);
-      doc.fillColor('#334155').font('Helvetica').text(`Condition: ${finding.condition}`);
-      doc.text(`Implication: ${finding.implication}`);
-      doc.text(`Recommendation: ${finding.recommendation}`);
+      doc.fillColor('#334155').font('Helvetica');
+      writePdfFindingNarrative(doc, finding);
       doc.moveDown(0.7);
     });
   }
@@ -227,13 +260,8 @@ async function buildFallbackPdfBuffer(inspection: PdfInspection, author: PdfAuth
           .fontSize(10)
           .text(`Finding ${index + 1} - ${finding.urgency}`);
         doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text(finding.component);
-        doc
-          .fillColor('#334155')
-          .font('Helvetica')
-          .fontSize(10.5)
-          .text(`Condition: ${finding.condition}`);
-        doc.text(`Implication: ${finding.implication}`);
-        doc.text(`Recommendation: ${finding.recommendation}`);
+        doc.fillColor('#334155').font('Helvetica').fontSize(10.5);
+        writePdfFindingNarrative(doc, finding);
 
         if (finding.imageUrls.length > 0) {
           doc.moveDown(0.25);
@@ -435,15 +463,7 @@ inspectionsRouter.get('/:id/pdf', async (req, res) => {
                   <h4 class='mt-1 text-sm font-bold text-slate-900'>${escapeHtml(
                     finding.component,
                   )}</h4>
-                  <p class='mt-1 text-sm text-slate-700'><span class='font-semibold'>Condition:</span> ${escapeHtml(
-                    finding.condition,
-                  )}</p>
-                  <p class='mt-1 text-sm text-slate-700'><span class='font-semibold'>Implication:</span> ${escapeHtml(
-                    finding.implication,
-                  )}</p>
-                  <p class='mt-1 text-sm text-slate-700'><span class='font-semibold'>Recommendation:</span> ${escapeHtml(
-                    finding.recommendation,
-                  )}</p>
+                  ${renderFindingNarrativeHtml(finding, 'mt-1')}
                 </article>
               `,
             )
@@ -470,15 +490,7 @@ inspectionsRouter.get('/:id/pdf', async (req, res) => {
                             <h4 class='mt-1 text-base font-bold text-slate-900'>${escapeHtml(
                               finding.component,
                             )}</h4>
-                            <p class='mt-2 text-sm text-slate-700'><span class='font-semibold'>Condition:</span> ${escapeHtml(
-                              finding.condition,
-                            )}</p>
-                            <p class='mt-2 text-sm text-slate-700'><span class='font-semibold'>Implication:</span> ${escapeHtml(
-                              finding.implication,
-                            )}</p>
-                            <p class='mt-2 text-sm text-slate-700'><span class='font-semibold'>Recommendation:</span> ${escapeHtml(
-                              finding.recommendation,
-                            )}</p>
+                            ${renderFindingNarrativeHtml(finding, 'mt-2')}
 
                             ${finding.imageUrls.length > 0 ? "<h5 class='mt-3 text-xs font-semibold tracking-wide text-slate-500 uppercase'>Evidence Images</h5>" : ''}
                             ${

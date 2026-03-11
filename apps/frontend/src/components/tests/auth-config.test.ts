@@ -120,10 +120,12 @@ describe('authOptions', () => {
   });
 
   test('jwt callback stores role and session callback maps role/id', async () => {
-    const jwt = authOptions.callbacks?.jwt as unknown as (params: Record<string, unknown>) =>
-      Promise<Record<string, unknown>>;
-    const session = authOptions.callbacks?.session as unknown as (params: Record<string, unknown>) =>
-      Promise<Record<string, unknown>>;
+    const jwt = authOptions.callbacks?.jwt as unknown as (
+      params: Record<string, unknown>,
+    ) => Promise<Record<string, unknown>>;
+    const session = authOptions.callbacks?.session as unknown as (
+      params: Record<string, unknown>,
+    ) => Promise<Record<string, unknown>>;
 
     if (!jwt || !session) {
       throw new Error('Expected auth callbacks to be defined');

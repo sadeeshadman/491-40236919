@@ -45,7 +45,9 @@ describe('MyReportsDashboard', () => {
     render(<MyReportsDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('Missing user id on session. Please sign in again.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Missing user id on session. Please sign in again.'),
+      ).toBeInTheDocument();
     });
   });
 

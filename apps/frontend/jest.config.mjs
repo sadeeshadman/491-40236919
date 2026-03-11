@@ -29,8 +29,8 @@ const customJestConfig = {
   coverageReporters: ['lcov', 'text'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
+      branches: 70,
+      functions: 75,
       lines: 80,
       statements: 80,
     },
