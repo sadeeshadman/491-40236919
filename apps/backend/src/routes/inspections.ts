@@ -25,6 +25,8 @@ function getDraftExpiryDate() {
   return new Date(Date.now() + draftExpiryDays * 24 * 60 * 60 * 1000);
 }
 
+const finalizeRevertWindowMs = 10 * 60 * 1000;
+
 const findingSchema = z
   .object({
     component: z.string().trim().min(1),
@@ -396,6 +398,76 @@ inspectionsRouter.get('/:id/pdf', async (req, res) => {
   }
 });
 
+inspectionsRouter.patch('/:id/finalize', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ error: 'Invalid inspection id' });
+    }
+
+    await dbConnect();
+
+    const existingInspection = await Inspection.findById(id);
+    if (!existingInspection) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
+
+    if (existingInspection.status === 'Finalized') {
+      return res.json({ inspection: existingInspection });
+    }
+
+    existingInspection.status = 'Finalized';
+    existingInspection.expiresAt = null;
+    await existingInspection.save();
+
+    return res.json({ inspection: existingInspection });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Optional safety net: allow a brief post-finalization revert window.
+inspectionsRouter.patch('/:id/revert', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ error: 'Invalid inspection id' });
+    }
+
+    await dbConnect();
+
+    const existingInspection = await Inspection.findById(id);
+    if (!existingInspection) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
+
+    if (existingInspection.status !== 'Finalized') {
+      return res.status(400).json({ error: 'Inspection is already in draft mode' });
+    }
+
+    const finalizedAt = existingInspection.updatedAt
+      ? new Date(existingInspection.updatedAt).getTime()
+      : 0;
+    const elapsedMs = Date.now() - finalizedAt;
+
+    if (!finalizedAt || elapsedMs > finalizeRevertWindowMs) {
+      return res.status(403).json({ error: 'Revert window has expired for this inspection' });
+    }
+
+    existingInspection.status = 'Draft';
+    existingInspection.expiresAt = getDraftExpiryDate();
+    await existingInspection.save();
+
+    return res.json({ inspection: existingInspection });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return res.status(500).json({ error: message });
+  }
+});
+
 inspectionsRouter.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -412,7 +484,21 @@ inspectionsRouter.patch('/:id', async (req, res) => {
 
     await dbConnect();
 
+    const existingInspection = await Inspection.findById(id);
+    if (!existingInspection) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
+
+    if (existingInspection.status === 'Finalized') {
+      return res.status(403).json({ error: 'Finalized inspections are locked for editing' });
+    }
+
     const payload = parseResult.data;
+
+    if (payload.status !== 'Draft') {
+      return res.status(400).json({ error: 'Use /finalize to finalize an inspection report' });
+    }
+
     const expiresAt = payload.status === 'Draft' ? getDraftExpiryDate() : null;
 
     const inspection = await Inspection.findByIdAndUpdate(
@@ -426,10 +512,6 @@ inspectionsRouter.patch('/:id', async (req, res) => {
       },
       { new: true, runValidators: true },
     );
-
-    if (!inspection) {
-      return res.status(404).json({ error: 'Inspection not found' });
-    }
 
     return res.json({ inspection });
   } catch (err: unknown) {

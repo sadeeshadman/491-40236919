@@ -37,6 +37,8 @@ const initialFindingDraft: FindingDraft = {
   urgency: 'Maintenance',
 };
 
+const finalizeRevertWindowMs = 10 * 60 * 1000;
+
 function getSectionCompleteState(section: InspectionSection) {
   return !section.isApplicable || section.findings.length > 0;
 }
@@ -61,6 +63,9 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
   const [saveMessage, setSaveMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isReverting, setIsReverting] = useState(false);
+  const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const [isFindingModalOpen, setIsFindingModalOpen] = useState(false);
   const [findingDraft, setFindingDraft] = useState<FindingDraft>(initialFindingDraft);
   const [draftImageUrls, setDraftImageUrls] = useState<string[]>([]);
@@ -71,6 +76,19 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedSection = inspection?.sections[selectedSectionIndex] ?? null;
+  const isReadOnly = inspection?.status === 'Finalized';
+  const canRevertToDraft = useMemo(() => {
+    if (!inspection || inspection.status !== 'Finalized' || !inspection.updatedAt) {
+      return false;
+    }
+
+    const finalizedAt = new Date(inspection.updatedAt).getTime();
+    if (Number.isNaN(finalizedAt)) {
+      return false;
+    }
+
+    return Date.now() - finalizedAt <= finalizeRevertWindowMs;
+  }, [inspection]);
 
   useEffect(() => {
     async function loadInspection() {
@@ -107,7 +125,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
 
   const saveProgress = useCallback(
     async (mode: SaveMode) => {
-      if (!inspection) {
+      if (!inspection || inspection.status === 'Finalized') {
         return;
       }
 
@@ -147,7 +165,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
 
   useEffect(() => {
     const intervalId = globalThis.setInterval(() => {
-      if (!isDirty || !inspection || isSaving) {
+      if (!isDirty || !inspection || isSaving || inspection.status === 'Finalized') {
         return;
       }
 
@@ -164,7 +182,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
     updater: (section: InspectionSection) => InspectionSection,
   ) {
     setInspection((previous) => {
-      if (!previous) {
+      if (!previous || previous.status === 'Finalized') {
         return previous;
       }
 
@@ -184,6 +202,58 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
     setIsDirty(true);
   }
 
+  async function finalizeInspection() {
+    if (!inspection) {
+      return;
+    }
+
+    setIsFinalizing(true);
+    setSaveMessage('');
+
+    try {
+      const response = await apiFetch<InspectionResponse>(
+        `/inspections/${inspection._id}/finalize`,
+        {
+          method: 'PATCH',
+        },
+      );
+
+      setInspection(response.inspection);
+      setIsDirty(false);
+      setIsFinalizeModalOpen(false);
+      setIsFindingModalOpen(false);
+      setSaveMessage('Inspection finalized. Editing is now locked.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to finalize inspection.';
+      setSaveMessage(message);
+    } finally {
+      setIsFinalizing(false);
+    }
+  }
+
+  async function revertToDraft() {
+    if (!inspection) {
+      return;
+    }
+
+    setIsReverting(true);
+    setSaveMessage('');
+
+    try {
+      const response = await apiFetch<InspectionResponse>(`/inspections/${inspection._id}/revert`, {
+        method: 'PATCH',
+      });
+
+      setInspection(response.inspection);
+      setSaveMessage('Inspection reverted to draft. Editing is enabled again.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to revert inspection.';
+      setSaveMessage(message);
+    } finally {
+      setIsReverting(false);
+    }
+  }
+
   function addFindingToSelectedSection(finding: InspectionFinding) {
     if (!selectedSection) {
       return;
@@ -197,6 +267,10 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
 
   function handleFindingSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isReadOnly) {
+      return;
+    }
 
     addFindingToSelectedSection({
       component: findingDraft.component.trim(),
@@ -225,6 +299,10 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
   }
 
   async function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    if (isReadOnly) {
+      return;
+    }
+
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -260,6 +338,10 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
   }
 
   function removeImageUrl(url: string) {
+    if (isReadOnly) {
+      return;
+    }
+
     setDraftImageUrls((previous) => previous.filter((u) => u !== url));
   }
 
@@ -327,11 +409,43 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
           <button
             type="button"
             onClick={() => void saveProgress('manual')}
-            disabled={isSaving}
+            disabled={isSaving || isReadOnly}
             className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSaving ? 'Saving...' : 'Save Progress'}
           </button>
+
+          {!isReadOnly ? (
+            <button
+              type="button"
+              onClick={() => setIsFinalizeModalOpen(true)}
+              disabled={isFinalizing}
+              className="mt-2 w-full rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isFinalizing ? 'Finalizing...' : 'Finalize Inspection'}
+            </button>
+          ) : (
+            <a
+              href={`/api/inspections/${inspection._id}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            >
+              Download Final PDF
+            </a>
+          )}
+
+          {isReadOnly && canRevertToDraft ? (
+            <button
+              type="button"
+              onClick={() => void revertToDraft()}
+              disabled={isReverting}
+              className="mt-2 w-full rounded-md border border-amber-400/70 bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isReverting ? 'Reverting...' : 'Revert to Draft (10-minute safety window)'}
+            </button>
+          ) : null}
+
           <p className="mt-2 min-h-5 text-xs text-slate-300">{saveMessage}</p>
         </div>
       </aside>
@@ -343,6 +457,22 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
           <p className="text-sm text-slate-300">Property: {inspection.propertyAddress}</p>
         </div>
 
+        {isReadOnly ? (
+          <div className="mt-4 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-4">
+            <p className="text-sm font-semibold text-emerald-200">
+              Report finalized: this inspection is now read-only.
+            </p>
+            <a
+              href={`/api/inspections/${inspection._id}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            >
+              Download Final PDF
+            </a>
+          </div>
+        ) : null}
+
         <div className="mt-5 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-100">Is this section applicable?</p>
@@ -350,8 +480,9 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
               type="button"
               role="switch"
               aria-checked={selectedSection?.isApplicable ?? false}
+              disabled={isReadOnly}
               onClick={() => {
-                if (!selectedSection) {
+                if (!selectedSection || isReadOnly) {
                   return;
                 }
 
@@ -360,7 +491,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                   isApplicable: !section.isApplicable,
                 }));
               }}
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition ${
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 selectedSection?.isApplicable ? 'bg-emerald-500' : 'bg-slate-600'
               }`}
             >
@@ -383,6 +514,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
               <textarea
                 id="exclusion-reason"
                 value={selectedSection?.limitations ?? ''}
+                disabled={isReadOnly}
                 onChange={(event) => {
                   updateSection(selectedSectionIndex, (section) => ({
                     ...section,
@@ -400,8 +532,9 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                 <h3 className="text-sm font-semibold text-slate-100">Findings</h3>
                 <button
                   type="button"
+                  disabled={isReadOnly}
                   onClick={() => setIsFindingModalOpen(true)}
-                  className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500"
+                  className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Add Finding
                 </button>
@@ -435,6 +568,43 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
           )}
         </div>
       </section>
+
+      {isFinalizeModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
+          <button
+            type="button"
+            aria-label="Close finalize modal"
+            className="absolute inset-0 h-full w-full"
+            onClick={() => setIsFinalizeModalOpen(false)}
+          />
+
+          <div className="relative z-10 w-full max-w-md rounded-xl border border-rose-400/50 bg-slate-900 p-5 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white">Finalize Inspection</h3>
+            <p className="mt-3 text-sm text-slate-200">
+              Finalizing will lock this report for editing. You can then download the final PDF to
+              send to your client manually. Proceed?
+            </p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsFinalizeModalOpen(false)}
+                className="flex-1 rounded-md border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-slate-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void finalizeInspection()}
+                disabled={isFinalizing}
+                className="flex-1 rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isFinalizing ? 'Finalizing...' : 'Proceed'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isFindingModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
@@ -478,6 +648,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                     type="search"
                     placeholder="Search by title or category (e.g. Electrical, GFCI…)"
                     value={cannedSearch}
+                    disabled={isReadOnly}
                     onChange={(event) => setCannedSearch(event.target.value)}
                     className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400"
                     autoComplete="off"
@@ -488,8 +659,9 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                         <li key={comment._id}>
                           <button
                             type="button"
+                            disabled={isReadOnly}
                             onClick={() => applyCannedComment(comment)}
-                            className="flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-slate-800"
+                            className="flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <span className="font-semibold text-white">{comment.title}</span>
                             <span className="text-xs text-slate-400">{comment.category}</span>
@@ -513,6 +685,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                 <input
                   required
                   value={findingDraft.component}
+                  disabled={isReadOnly}
                   onChange={(event) =>
                     setFindingDraft((previous) => ({ ...previous, component: event.target.value }))
                   }
@@ -526,6 +699,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                   required
                   rows={2}
                   value={findingDraft.condition}
+                  disabled={isReadOnly}
                   onChange={(event) =>
                     setFindingDraft((previous) => ({ ...previous, condition: event.target.value }))
                   }
@@ -539,6 +713,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                   required
                   rows={2}
                   value={findingDraft.implication}
+                  disabled={isReadOnly}
                   onChange={(event) =>
                     setFindingDraft((previous) => ({
                       ...previous,
@@ -555,6 +730,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                   required
                   rows={2}
                   value={findingDraft.recommendation}
+                  disabled={isReadOnly}
                   onChange={(event) =>
                     setFindingDraft((previous) => ({
                       ...previous,
@@ -569,6 +745,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                 Urgency
                 <select
                   value={findingDraft.urgency}
+                  disabled={isReadOnly}
                   onChange={(event) =>
                     setFindingDraft((previous) => ({
                       ...previous,
@@ -591,7 +768,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                   accept="image/*"
                   multiple
                   onChange={(event) => void handleImageFileChange(event)}
-                  disabled={isUploadingImage}
+                  disabled={isUploadingImage || isReadOnly}
                   className="mt-1 w-full text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-700 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-100 hover:file:bg-slate-600 disabled:opacity-60"
                 />
                 {isUploadingImage ? (
@@ -610,9 +787,10 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                         />
                         <button
                           type="button"
+                          disabled={isReadOnly}
                           onClick={() => removeImageUrl(url)}
                           aria-label="Remove image"
-                          className="absolute -top-1 -right-1 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-xs text-white group-hover:flex"
+                          className="absolute -top-1 -right-1 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-xs text-white group-hover:flex disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           ×
                         </button>
@@ -624,7 +802,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
 
               <button
                 type="submit"
-                disabled={isUploadingImage}
+                disabled={isUploadingImage || isReadOnly}
                 className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Add Finding

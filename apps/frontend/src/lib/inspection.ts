@@ -24,6 +24,7 @@ export type InspectionDocument = {
   propertyType: InspectionPropertyType;
   status: InspectionStatus;
   createdAt: string;
+  updatedAt?: string;
   expiresAt?: string | null;
   sections: InspectionSection[];
 };
