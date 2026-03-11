@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { canRequestQuoteForSubservice } from '@/lib/services';
 import type { Service, Subservice } from '@/lib/services';
 import { QuoteRequestModal } from '@/components/modals/QuoteRequestModal';
+import { apiFetch } from '@/lib/api';
 
 type ServiceDetailProps = {
   service: Service;
@@ -11,6 +13,13 @@ type ServiceDetailProps = {
 };
 
 type ServiceAudience = 'owner' | 'tenant';
+
+type StartInspectionResponse = {
+  inspection: {
+    _id?: string;
+    id?: string;
+  };
+};
 
 export function ServiceDetail({ service, initialExpandedSubserviceId = null }: ServiceDetailProps) {
   const subserviceRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -27,6 +36,14 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
   const [selectedAudience, setSelectedAudience] = useState<ServiceAudience>(initialAudience);
   const [selectedSpecification, setSelectedSpecification] = useState<string | null>(null);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isInspectorAuthenticated, setIsInspectorAuthenticated] = useState(false);
+  const [inspectorUserId, setInspectorUserId] = useState<string | null>(null);
+  const [reportAddress, setReportAddress] = useState('');
+  const [reportPropertyType, setReportPropertyType] = useState<'Detached' | 'Condo' | 'Townhouse'>(
+    'Detached',
+  );
+  const [isLaunchingReport, setIsLaunchingReport] = useState(false);
+  const [reportLaunchError, setReportLaunchError] = useState('');
 
   const ownerSubservices = service.subservices.filter(
     (subservice) => subservice.audience === 'owner',
@@ -35,6 +52,46 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
     (subservice) => subservice.audience === 'tenant',
   );
   const hasAudienceSections = ownerSubservices.length > 0 && tenantSubservices.length > 0;
+
+  useEffect(() => {
+    if (service.slug !== 'home-inspection') {
+      setIsInspectorAuthenticated(false);
+      setInspectorUserId(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function checkInspectorSession() {
+      try {
+        const response = await fetch('/api/auth/session', { cache: 'no-store' });
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as {
+          user?: {
+            role?: string;
+            id?: string;
+          };
+        };
+
+        const role = data.user?.role;
+        if (!cancelled && (role === 'employee' || role === 'admin')) {
+          setIsInspectorAuthenticated(true);
+          setInspectorUserId(typeof data.user?.id === 'string' ? data.user.id : null);
+        }
+      } catch {
+        // If session lookup fails, keep tools hidden.
+      }
+    }
+
+    void checkInspectorSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [service.slug]);
 
   useEffect(() => {
     if (!initialExpandedSubserviceId) {
@@ -67,6 +124,56 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
   function openQuoteModal(specification?: string) {
     setSelectedSpecification(specification ?? null);
     setIsQuoteModalOpen(true);
+  }
+
+  function getInspectionId(response: StartInspectionResponse) {
+    if (typeof response.inspection._id === 'string' && response.inspection._id) {
+      return response.inspection._id;
+    }
+
+    if (typeof response.inspection.id === 'string' && response.inspection.id) {
+      return response.inspection.id;
+    }
+
+    return null;
+  }
+
+  async function launchReportGenerator() {
+    const trimmedAddress = reportAddress.trim();
+
+    if (!trimmedAddress) {
+      setReportLaunchError('Property address is required to start a report.');
+      return;
+    }
+
+    setIsLaunchingReport(true);
+    setReportLaunchError('');
+
+    try {
+      const response = await apiFetch<StartInspectionResponse>('/inspections/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          propertyAddress: trimmedAddress,
+          propertyType: reportPropertyType,
+          authorId: inspectorUserId ?? undefined,
+        }),
+      });
+
+      const inspectionId = getInspectionId(response);
+      if (!inspectionId) {
+        throw new Error('Inspection started but no id was returned.');
+      }
+
+      globalThis.open(`/report-generator/${inspectionId}`, '_self');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to start report generator right now.';
+      setReportLaunchError(message);
+      setIsLaunchingReport(false);
+    }
   }
 
   function renderSubserviceList(subservices: Subservice[]) {
@@ -143,12 +250,68 @@ export function ServiceDetail({ service, initialExpandedSubserviceId = null }: S
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-8 px-6 py-10 md:px-10 md:py-12">
-      <div className="space-y-4">
-        <p className="text-xs font-semibold tracking-[0.28em] text-slate-300 uppercase">Services</p>
-        <h1 className="font-serif text-4xl text-white md:text-5xl">{service.name}</h1>
-        <p className="max-w-4xl text-base leading-8 text-slate-200 md:text-lg">
-          {service.overview}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="max-w-4xl space-y-4">
+          <p className="text-xs font-semibold tracking-[0.28em] text-slate-300 uppercase">
+            Services
+          </p>
+          <h1 className="font-serif text-4xl text-white md:text-5xl">{service.name}</h1>
+          <p className="text-base leading-8 text-slate-200 md:text-lg">{service.overview}</p>
+        </div>
+
+        {service.slug === 'home-inspection' && isInspectorAuthenticated ? (
+          <div className="w-full max-w-md rounded-xl border border-indigo-400/35 bg-indigo-500/8 p-4">
+            <p className="text-xs font-semibold tracking-[0.2em] text-indigo-200 uppercase">
+              Inspector Tools
+            </p>
+            <p className="mt-1 text-sm text-slate-200">Start a new inspection workspace</p>
+            <Link
+              href="/report-generator"
+              className="mt-2 inline-flex rounded-md border border-indigo-300/40 px-3 py-1.5 text-xs font-semibold text-indigo-100 transition hover:border-indigo-300 hover:text-white"
+            >
+              My Reports
+            </Link>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <label className="block text-sm text-slate-100">
+                Property Address
+                <input
+                  value={reportAddress}
+                  onChange={(event) => setReportAddress(event.target.value)}
+                  className="mt-1 w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400"
+                  placeholder="123 Example Street, Ottawa"
+                />
+              </label>
+
+              <label className="block text-sm text-slate-100">
+                Property Type
+                <select
+                  value={reportPropertyType}
+                  onChange={(event) =>
+                    setReportPropertyType(event.target.value as 'Detached' | 'Condo' | 'Townhouse')
+                  }
+                  className="mt-1 w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400"
+                >
+                  <option value="Detached">Detached</option>
+                  <option value="Condo">Condo</option>
+                  <option value="Townhouse">Townhouse</option>
+                </select>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void launchReportGenerator()}
+              disabled={isLaunchingReport}
+              className="mt-3 inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isLaunchingReport ? 'Opening...' : 'Open Report Generator'}
+            </button>
+
+            {reportLaunchError ? (
+              <p className="mt-2 text-xs text-rose-300">{reportLaunchError}</p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {service.subservices.length > 0 ? (

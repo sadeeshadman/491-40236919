@@ -1,8 +1,35 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ServiceDetail } from '../services/ServiceDetail';
 import { services } from '../../lib/services';
+import { apiFetch } from '../../lib/api';
+
+jest.mock('../../lib/api', () => ({
+  apiFetch: jest.fn(),
+}));
+
+const mockedApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>;
+
+function mockSessionFetch(role: 'employee' | 'admin' | null) {
+  const mock = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => (role ? { user: { role } } : { user: null }),
+  });
+
+  Object.defineProperty(globalThis, 'fetch', {
+    configurable: true,
+    writable: true,
+    value: mock,
+  });
+
+  return mock;
+}
 
 describe('ServiceDetail', () => {
+  afterEach(() => {
+    mockedApiFetch.mockReset();
+    jest.restoreAllMocks();
+  });
+
   test('expands and collapses subservice details', () => {
     render(<ServiceDetail service={services[0]} />);
 
@@ -188,5 +215,78 @@ describe('ServiceDetail', () => {
       'href',
       '/forms/property-management/owners/N12-Notice%20of%20Eviction.pdf',
     );
+  });
+
+  test('hides report generator tools when inspector is not logged in', async () => {
+    mockSessionFetch(null);
+
+    render(<ServiceDetail service={services[0]} />);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: 'Open Report Generator' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  test('validates address before opening report generator', async () => {
+    mockSessionFetch('employee');
+
+    render(<ServiceDetail service={services[0]} />);
+
+    await screen.findByRole('button', { name: 'Open Report Generator' });
+    fireEvent.click(screen.getByRole('button', { name: 'Open Report Generator' }));
+
+    expect(screen.getByText('Property address is required to start a report.')).toBeInTheDocument();
+    expect(mockedApiFetch).not.toHaveBeenCalled();
+  });
+
+  test('starts inspection and navigates to report workspace', async () => {
+    mockSessionFetch('employee');
+
+    mockedApiFetch.mockResolvedValue({ inspection: { _id: 'inspection-123' } });
+
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<ServiceDetail service={services[0]} />);
+
+    await screen.findByRole('button', { name: 'Open Report Generator' });
+    fireEvent.change(screen.getByLabelText(/Property Address/i), {
+      target: { value: '101 Example Ave, Ottawa' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Open Report Generator' }));
+
+    await waitFor(() => {
+      expect(mockedApiFetch).toHaveBeenCalledWith('/inspections/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          propertyAddress: '101 Example Ave, Ottawa',
+          propertyType: 'Detached',
+        }),
+      });
+    });
+
+    expect(openSpy).toHaveBeenCalledWith('/report-generator/inspection-123', '_self');
+  });
+
+  test('shows launch error if inspection start request fails', async () => {
+    mockSessionFetch('employee');
+
+    mockedApiFetch.mockRejectedValue(new Error('Start failed'));
+
+    render(<ServiceDetail service={services[0]} />);
+
+    await screen.findByRole('button', { name: 'Open Report Generator' });
+    fireEvent.change(screen.getByLabelText(/Property Address/i), {
+      target: { value: '88 Main St' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Open Report Generator' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Start failed')).toBeInTheDocument();
+    });
   });
 });
