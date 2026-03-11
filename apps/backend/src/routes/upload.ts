@@ -10,11 +10,21 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
-cloudinary.config({
-  cloud_name: getRequiredEnv('CLOUDINARY_CLOUD_NAME'),
-  api_key: getRequiredEnv('CLOUDINARY_API_KEY'),
-  api_secret: getRequiredEnv('CLOUDINARY_API_SECRET'),
-});
+let cloudinaryConfigured = false;
+
+function ensureCloudinaryConfigured() {
+  if (cloudinaryConfigured) {
+    return;
+  }
+
+  cloudinary.config({
+    cloud_name: getRequiredEnv('CLOUDINARY_CLOUD_NAME'),
+    api_key: getRequiredEnv('CLOUDINARY_API_KEY'),
+    api_secret: getRequiredEnv('CLOUDINARY_API_SECRET'),
+  });
+
+  cloudinaryConfigured = true;
+}
 
 // Store file in memory so we can pipe it directly to Cloudinary — no disk I/O.
 const upload = multer({
@@ -57,6 +67,8 @@ export const uploadRouter = Router();
 
 uploadRouter.post('/', upload.single('image'), async (req, res) => {
   try {
+    ensureCloudinaryConfigured();
+
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
     }
