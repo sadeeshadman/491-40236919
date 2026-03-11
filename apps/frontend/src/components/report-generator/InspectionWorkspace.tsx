@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import imageCompression from 'browser-image-compression';
 import { apiFetch } from '@/lib/api';
 import type {
   CannedComment,
@@ -62,8 +63,12 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
   const [isDirty, setIsDirty] = useState(false);
   const [isFindingModalOpen, setIsFindingModalOpen] = useState(false);
   const [findingDraft, setFindingDraft] = useState<FindingDraft>(initialFindingDraft);
+  const [draftImageUrls, setDraftImageUrls] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [cannedComments, setCannedComments] = useState<CannedComment[]>([]);
   const [cannedSearch, setCannedSearch] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedSection = inspection?.sections[selectedSectionIndex] ?? null;
 
@@ -199,10 +204,12 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
       implication: findingDraft.implication.trim(),
       recommendation: findingDraft.recommendation.trim(),
       urgency: findingDraft.urgency,
-      imageUrls: [],
+      imageUrls: draftImageUrls,
     });
 
     setFindingDraft(initialFindingDraft);
+    setDraftImageUrls([]);
+    setUploadError('');
     setCannedSearch('');
     setIsFindingModalOpen(false);
   }
@@ -215,6 +222,45 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
       recommendation: comment.recommendation,
     }));
     setCannedSearch('');
+  }
+
+  async function handleImageFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadError('');
+    setIsUploadingImage(true);
+
+    try {
+      for (const file of Array.from(files)) {
+        const compressed = await imageCompression(file, {
+          maxWidthOrHeight: 1200,
+          initialQuality: 0.8,
+          useWebWorker: true,
+        });
+
+        const formData = new FormData();
+        formData.append('image', compressed, compressed.name);
+
+        const result = await apiFetch<{ url: string }>('/upload-image', {
+          method: 'POST',
+          body: formData,
+        });
+
+        setDraftImageUrls((previous) => [...previous, result.url]);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Image upload failed.';
+      setUploadError(message);
+    } finally {
+      setIsUploadingImage(false);
+      // Reset file input so the same file can be re-selected after removal
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function removeImageUrl(url: string) {
+    setDraftImageUrls((previous) => previous.filter((u) => u !== url));
   }
 
   const filteredCannedComments = useMemo(() => {
@@ -399,6 +445,8 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
             onClick={() => {
               setIsFindingModalOpen(false);
               setCannedSearch('');
+              setDraftImageUrls([]);
+              setUploadError('');
             }}
           />
 
@@ -410,6 +458,8 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                 onClick={() => {
                   setIsFindingModalOpen(false);
                   setCannedSearch('');
+                  setDraftImageUrls([]);
+                  setUploadError('');
                 }}
                 className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-200 hover:border-slate-400"
               >
@@ -533,9 +583,49 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
                 </select>
               </label>
 
+              <div>
+                <p className="text-sm text-slate-200">Images (optional)</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => void handleImageFileChange(event)}
+                  disabled={isUploadingImage}
+                  className="mt-1 w-full text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-700 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-100 hover:file:bg-slate-600 disabled:opacity-60"
+                />
+                {isUploadingImage ? (
+                  <p className="mt-1 text-xs text-slate-400">Compressing and uploading…</p>
+                ) : null}
+                {uploadError ? <p className="mt-1 text-xs text-rose-300">{uploadError}</p> : null}
+                {draftImageUrls.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {draftImageUrls.map((url) => (
+                      <div key={url} className="group relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt="Uploaded finding evidence"
+                          className="h-16 w-16 rounded-md border border-slate-600 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImageUrl(url)}
+                          aria-label="Remove image"
+                          className="absolute -top-1 -right-1 hidden h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-xs text-white group-hover:flex"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
               <button
                 type="submit"
-                className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                disabled={isUploadingImage}
+                className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Add Finding
               </button>
