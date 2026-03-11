@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { services } from '@/lib/services';
 import { getServicePath, getSubservicePath } from '@/lib/servicePaths';
@@ -20,14 +21,27 @@ export function SiteHeader() {
       onMouseLeave={() => setServicesOpen(false)}
     >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4 md:px-10">
-        <div className="hidden md:flex">
-          <div className="flex h-11 w-36 items-center justify-center rounded-md border border-dashed border-slate-500 bg-slate-900 text-xs font-semibold tracking-[0.24em] text-slate-200 uppercase">
-            Logo
-          </div>
-        </div>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="hidden md:flex" aria-label="Constein Group home">
+            <Image
+              src="/logo1.png"
+              alt="Constein Group logo"
+              width={160}
+              height={44}
+              className="h-11 w-auto"
+              priority
+            />
+          </Link>
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed border-slate-500 bg-slate-900 text-xs font-semibold tracking-[0.16em] text-slate-200 uppercase md:hidden">
-          CG
+          <Link href="/" className="md:hidden" aria-label="Constein Group home">
+            <Image
+              src="/logo1.png"
+              alt="Constein Group logo"
+              width={112}
+              height={100}
+              className="h-10 w-auto"
+            />
+          </Link>
         </div>
 
         <nav className="relative flex items-center gap-3 text-sm font-medium text-slate-200 sm:gap-4 md:gap-5">
@@ -63,11 +77,11 @@ export function SiteHeader() {
 
           <Link
             href="/api/auth/signin"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-[10px] font-semibold tracking-[0.08em] text-slate-100 uppercase transition hover:border-indigo-400 hover:text-white"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-600 bg-slate-900 transition hover:border-indigo-400"
             title="Inspector login"
             aria-label="Inspector login"
           >
-            In
+            <Image src="/login.png" alt="Login" width={20} height={20} className="h-5 w-5" />
           </Link>
         </nav>
       </div>
