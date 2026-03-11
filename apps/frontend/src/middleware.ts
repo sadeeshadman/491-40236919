@@ -8,7 +8,15 @@ export async function middleware(request: NextRequest) {
     secret: process.env.AUTH_SECRET,
   });
 
-  if (!token || token.role !== 'employee') {
+  if (!token) {
+    const signInUrl = new URL('/api/auth/signin', request.url);
+    signInUrl.searchParams.set('callbackUrl', request.url);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  const isAuthorizedRole = token.role === 'employee' || token.role === 'admin';
+
+  if (!isAuthorizedRole) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
