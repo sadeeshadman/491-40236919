@@ -607,7 +607,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
       ) : null}
 
       {isFindingModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/80 px-4 py-4 sm:items-center">
           <button
             type="button"
             aria-label="Close finding modal"
@@ -620,7 +620,7 @@ export function InspectionWorkspace({ inspectionId }: Readonly<InspectionWorkspa
             }}
           />
 
-          <div className="relative z-10 w-full max-w-lg rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+          <div className="relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <h3 className="text-lg font-semibold text-white">Add Finding</h3>
               <button

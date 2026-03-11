@@ -65,12 +65,6 @@ export const services: Service[] = [
         description:
           'Targeted review of commercial properties to identify potential risks and suggest corrective actions.',
       },
-      {
-        id: 'report-generator',
-        name: 'Inspection Report Generator',
-        description:
-          'Use your post inspection field data to generate a detailed report for your client. Use our tool to make the process of creating large reports easier free of any cost',
-      },
     ],
   },
   {

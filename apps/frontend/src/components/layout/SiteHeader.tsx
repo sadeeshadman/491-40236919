@@ -30,7 +30,7 @@ export function SiteHeader() {
           CG
         </div>
 
-        <nav className="relative flex items-center gap-2 text-sm font-medium text-slate-200 sm:gap-3 md:gap-5">
+        <nav className="relative flex items-center gap-3 text-sm font-medium text-slate-200 sm:gap-4 md:gap-5">
           {navItemsBeforeServices.map((item) => (
             <Link
               key={item.label}
@@ -60,6 +60,15 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+
+          <Link
+            href="/api/auth/signin"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-[10px] font-semibold tracking-[0.08em] text-slate-100 uppercase transition hover:border-indigo-400 hover:text-white"
+            title="Inspector login"
+            aria-label="Inspector login"
+          >
+            In
+          </Link>
         </nav>
       </div>
 

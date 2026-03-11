@@ -17,7 +17,7 @@ export default async function ReportGeneratorPage({ params }: Readonly<ReportGen
 
       <SiteHeader />
 
-      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
+      <main className="relative mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
         <div className="mb-5 rounded-xl border border-slate-700 bg-slate-900/90 p-4">
           <p className="text-xs tracking-[0.2em] text-slate-400 uppercase">Report Generator</p>
           <h1 className="mt-1 text-2xl font-semibold text-white md:text-3xl">

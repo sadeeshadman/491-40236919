@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { findUserByEmail } from '@/lib/auth/user-repository';
@@ -12,7 +12,7 @@ function normalizeRole(role: string | null): UserRole | null {
   return null;
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: 'jwt',
@@ -73,4 +73,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-});
+};
