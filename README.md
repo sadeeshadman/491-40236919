@@ -1,8 +1,9 @@
-# Constein Group Website  
+# Constein Group Website
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=alert_status&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=code_smells&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=coverage&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=duplicated_lines_density&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=alert_status&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=code_smells&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=coverage&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein) [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=sadeeshadman_Constein&metric=duplicated_lines_density&token=ef37aa31fe298bc71bafa0919c300a7001b67544)](https://sonarcloud.io/summary/new_code?id=sadeeshadman_Constein)
 
-## Project Summary   
+## Project Summary
+
 Constein is a property-services platform that combines a public marketing website with operational tools for inspection reporting. The site presents four service areas, supports quote requests, and includes a protected inspector workflow for creating, editing, finalizing, and exporting inspection reports.
 
 Mockup of the application: https://scene-vital-65436099.figma.site
